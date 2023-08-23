@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:chochayngoaidong/actors/player.dart';
+import 'package:chochayngoaidong/components/player.dart';
 import 'package:flame/camera.dart';
 import 'package:flame/game.dart';
 import 'package:flame_tiled/flame_tiled.dart';
