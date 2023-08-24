@@ -42,12 +42,12 @@
   <object id="34" x="464" y="288" width="96" height="48"/>
   <object id="35" x="544" y="272" width="16"/>
   <object id="36" x="544" y="272" width="16" height="16"/>
-  <object id="38" type="Platfroms" x="464" y="240" width="48" height="16"/>
-  <object id="39" type="Platfroms" x="400" y="208" width="48" height="16"/>
-  <object id="41" type="Platfroms" x="336" y="176" width="48" height="16"/>
-  <object id="42" type="Platfroms" x="288" y="144" width="48" height="16"/>
-  <object id="43" type="Platfroms" x="240" y="176" width="48" height="16"/>
-  <object id="44" type="Platfroms" x="176" y="208" width="48" height="16"/>
-  <object id="45" type="Platfroms" x="112" y="240" width="48" height="16"/>
+  <object id="38" type="Platfrom" x="464" y="240" width="48" height="16"/>
+  <object id="39" type="Platfrom" x="400" y="208" width="48" height="16"/>
+  <object id="41" type="Platfrom" x="336" y="176" width="48" height="16"/>
+  <object id="42" type="Platfrom" x="288" y="144" width="48" height="16"/>
+  <object id="43" type="Platfrom" x="240" y="176" width="48" height="16"/>
+  <object id="44" type="Platfrom" x="176" y="208" width="48" height="16"/>
+  <object id="45" type="Platfrom" x="112" y="240" width="48" height="16"/>
  </objectgroup>
 </map>

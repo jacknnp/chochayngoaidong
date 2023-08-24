@@ -38,7 +38,7 @@ class Level extends World {
     if (collisionsLayer != null) {
       for (final collison in collisionsLayer.objects) {
         switch (collison.class_) {
-          case 'Platfrom':
+          case 'Platform':
             final platform = CollisionBlock(
               position: Vector2(collison.x, collison.y),
               size: Vector2(collison.width, collison.height),

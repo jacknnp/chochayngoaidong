@@ -12,9 +12,11 @@ enum PlayerState { idle, running }
 // 3 trạng thái di chuyển của nhân vật
 enum PlayerDirection { left, right, none }
 
-// Khai báo đối tượng nhân vật
 class Player extends SpriteAnimationGroupComponent
-    with HasGameRef<PixelAdventure>, KeyboardHandler {
+    // Khai báo đối tượng nhân vật
+    with
+        HasGameRef<PixelAdventure>,
+        KeyboardHandler {
   //Khai báo các biến cần thiết đại diên cho các state
   String character;
   Player({position, this.character = 'Ninja Frog'}) : super(position: position);
@@ -24,8 +26,8 @@ class Player extends SpriteAnimationGroupComponent
 
   final double stepTime = 0.05;
   final double _gravity = 9.8;
-  final double _jumpForce = 260;
-  final double _terminalVelocity = 300;
+  final double _jumpForce = 360;
+  final double _terminalVelocity = 460;
   bool isOnGround = false;
   bool hasJumped = false;
 
@@ -49,6 +51,22 @@ class Player extends SpriteAnimationGroupComponent
     return super.onLoad();
   }
 
+// Goi vao on load
+  void _loadAllAnimations() {
+    runningAnimation = _spriteAnimation('Run', 11);
+
+    idleAnimation = _spriteAnimation('Idle', 11);
+
+    //List of all animations
+    animations = {
+      PlayerState.idle: idleAnimation,
+      PlayerState.running: runningAnimation
+    };
+    //Set current animation
+    current = PlayerState.idle;
+  }
+// Goi vao on load
+
   @override
   void update(double dt) {
     _updatePlayerMovement(dt);
@@ -60,9 +78,90 @@ class Player extends SpriteAnimationGroupComponent
     super.update(dt);
   }
 
-// Hàm xử lý khi có dự kiện trên bàn phím
+//update
+  void _applyGravity(double dt) {
+    //Xử lý trọng lực
+
+    velocity.y += _gravity;
+    velocity.y = velocity.y.clamp(-_jumpForce, _terminalVelocity);
+    position.y += velocity.y * dt;
+  }
+
+  void _updatePlayerMovement(double dt) {
+    //Xử lý trạng thái hiện thai của đối tượng
+    velocity.x = horizontalMovement * moveSpeed;
+    position.x += velocity.x * dt;
+    if (hasJumped && isOnGround) _playerJump(dt);
+  }
+
+  void _playerJump(double dt) {
+    velocity.y = -_jumpForce;
+    position.y += velocity.y * dt;
+    isOnGround = false;
+    hasJumped = false;
+  }
+
+  void _updatePlayerState() {
+    //xử lý chuyển đổi trạng thái đang đứng im ,hay di chuyển
+    PlayerState playerState = PlayerState.idle;
+    if (velocity.x < 0 && scale.x > 0) {
+      flipHorizontallyAroundCenter();
+    } else if (velocity.x > 0 && scale.x < 0) {
+      flipHorizontallyAroundCenter();
+    }
+
+    // Kiểm tra actor đang di chuyển thì chuyển sang trạng thái running
+    if (velocity.x > 0 || velocity.x < 0) playerState = PlayerState.running;
+    current = playerState;
+  }
+
+  void _checkHorizontalCollisons() {
+    // Kiểm tra va chạm theo trục ngang  X
+    for (final block in collisionBlocks) {
+      if (!block.isPlatform) {
+        if (checkCollision(this, block)) {
+          if (velocity.x > 0) {
+            velocity.x = 0;
+            position.x = block.x - width;
+            break;
+          }
+          if (velocity.x < 0) {
+            velocity.x = 0;
+            position.x = block.x + block.width + width;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  void _checkVerticalCollisions() {
+    //Kiểm tra va trạm theo trục dọc Y
+    for (final block in collisionBlocks) {
+      if (block.isPlatform) {
+        //handle
+      } else {
+        if (checkCollision(this, block)) {
+          if (velocity.y > 0) {
+            velocity.y = 0;
+            position.y = block.y - width;
+            isOnGround = true;
+            break;
+          }
+          if (velocity.y < 0) {
+            velocity.y = 0;
+            position.y = block.y + block.height;
+          }
+        }
+      }
+    }
+  }
+
+//update
+
   @override
   bool onKeyEvent(RawKeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+    // Hàm xử lý khi có dự kiện trên bàn phím
     // Optimize lại code cho ngắn gọn
     horizontalMovement = 0;
     // TODO: implement onKeyEvent
@@ -87,124 +186,10 @@ class Player extends SpriteAnimationGroupComponent
     return super.onKeyEvent(event, keysPressed);
   }
 
-  void _loadAllAnimations() {
-    runningAnimation = _spriteAnimation('Run', 11);
-
-    idleAnimation = _spriteAnimation('Idle', 11);
-
-    //List of all animations
-    animations = {
-      PlayerState.idle: idleAnimation,
-      PlayerState.running: runningAnimation
-    };
-    //Set current animation
-    current = PlayerState.idle;
-  }
-
   SpriteAnimation _spriteAnimation(String state, int amount) {
     return SpriteAnimation.fromFrameData(
         game.images.fromCache('Main Characters/$character/$state (32x32).png'),
         SpriteAnimationData.sequenced(
             amount: amount, stepTime: stepTime, textureSize: Vector2.all(32)));
-  }
-
-  void _updatePlayerMovement(double dt) {
-    velocity.x = horizontalMovement * moveSpeed;
-    position.x += velocity.x * dt;
-    if (hasJumped && isOnGround) _playerJump(dt);
-
-    //   double dirX = 0.0;
-    //   switch (playerDirection) {
-    //     case PlayerDirection.left:
-    //       if (isFacingRight) {
-    //         flipHorizontallyAroundCenter();
-    //         isFacingRight = false;
-    //       }
-    //       current = PlayerState.running;
-    //       dirX -= moveSpeed;
-    //       break;
-    //     case PlayerDirection.right:
-    //       if (!isFacingRight) {
-    //         flipHorizontallyAroundCenter();
-    //         isFacingRight = true;
-    //       }
-    //       current = PlayerState.running;
-    //       dirX += moveSpeed;
-    //       break;
-    //     case PlayerDirection.none:
-    //       break;
-    //     default:
-    //   }
-
-    //   velocity = Vector2(dirX, 0.0);
-    //   position += velocity * dt;
-  }
-
-  void _playerJump(double dt) {
-    velocity.y = -_jumpForce;
-    position.y += velocity.y * dt;
-    isOnGround = false;
-    hasJumped = false;
-  }
-
-  void _updatePlayerState() {
-    PlayerState playerState = PlayerState.idle;
-    if (velocity.x < 0 && scale.x > 0) {
-      flipHorizontallyAroundCenter();
-    } else if (velocity.x > 0 && scale.x < 0) {
-      flipHorizontallyAroundCenter();
-    }
-
-    // Kiểm tra actor đang di chuyển thì chuyển sang trạng thái running
-    if (velocity.x > 0 || velocity.x < 0) playerState = PlayerState.running;
-    current = playerState;
-  }
-
-  void _checkHorizontalCollisons() {
-    for (final block in collisionBlocks) {
-      // Xử lý collision
-      if (!block.isPlatform) {
-        if (checkCollision(this, block)) {
-          if (velocity.x > 0) {
-            velocity.x = 0;
-            position.x = block.x - width;
-            break;
-          }
-          if (velocity.x < 0) {
-            velocity.x = 0;
-            position.x = block.x + block.width + width;
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  //Xử lý trọng lực
-  void _applyGravity(double dt) {
-    velocity.y += _gravity;
-    velocity.y = velocity.y.clamp(-_jumpForce, _terminalVelocity);
-    position.y += velocity.y * dt;
-  }
-
-  void _checkVerticalCollisions() {
-    for (final block in collisionBlocks) {
-      if (block.isPlatform) {
-        //Xử lý chạm dưới
-      } else {
-        if (checkCollision(this, block)) {
-          if (velocity.y > 0) {
-            velocity.y = 0;
-            position.y = block.y - width;
-            isOnGround = true;
-            break;
-          }
-          if (velocity.y < 0) {
-            velocity.y = 0;
-            position.y = block.y + block.height;
-          }
-        }
-      }
-    }
   }
 }
