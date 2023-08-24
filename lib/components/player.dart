@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:chochayngoaidong/components/collision_block.dart';
+import 'package:chochayngoaidong/components/untils.dart';
 import 'package:chochayngoaidong/pixel_adventure.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/services.dart';
@@ -19,29 +21,43 @@ class Player extends SpriteAnimationGroupComponent
 
   late final SpriteAnimation idleAnimation;
   late final SpriteAnimation runningAnimation;
+
   final double stepTime = 0.05;
+  final double _gravity = 9.8;
+  final double _jumpForce = 260;
+  final double _terminalVelocity = 300;
+  bool isOnGround = false;
+  bool hasJumped = false;
+
+  double horizontalMovement = 0;
+  double moveSpeed = 100;
+
+  List<CollisionBlock> collisionBlocks = [];
 
   //Xử lý di chuyển của nhân vật gồm điều hướng, tốc độ di chuyển , mặt hướng đi
   PlayerDirection playerDirection = PlayerDirection.none;
 
-  double horizontalMovement = 0;
-  double moveSpeed = 100;
   Vector2 velocity = Vector2.zero();
-  bool isFacingRight = true;
+
+  // bool isFacingRight = true;
+
+  @override
+  FutureOr<void> onLoad() {
+    _loadAllAnimations();
+    debugMode = true;
+    // TODO: implement onLoad
+    return super.onLoad();
+  }
 
   @override
   void update(double dt) {
     _updatePlayerMovement(dt);
     _updatePlayerState();
+    _checkHorizontalCollisons();
+    _applyGravity(dt);
+    _checkVerticalCollisions();
     // TODO: implement update
     super.update(dt);
-  }
-
-  @override
-  FutureOr<void> onLoad() {
-    _loadAllAnimations();
-    // TODO: implement onLoad
-    return super.onLoad();
   }
 
 // Hàm xử lý khi có dự kiện trên bàn phím
@@ -57,6 +73,7 @@ class Player extends SpriteAnimationGroupComponent
     horizontalMovement += isLeftKeyPressed ? -1 : 0;
     horizontalMovement += isRightKeyPressed ? 1 : 0;
 
+    hasJumped = keysPressed.contains(LogicalKeyboardKey.space);
     // if (isLeftKeyPressed && isRightKeyPressed) {
     //   playerDirection = PlayerDirection.none;
     // } else if (isLeftKeyPressed) {
@@ -94,6 +111,8 @@ class Player extends SpriteAnimationGroupComponent
   void _updatePlayerMovement(double dt) {
     velocity.x = horizontalMovement * moveSpeed;
     position.x += velocity.x * dt;
+    if (hasJumped && isOnGround) _playerJump(dt);
+
     //   double dirX = 0.0;
     //   switch (playerDirection) {
     //     case PlayerDirection.left:
@@ -121,6 +140,13 @@ class Player extends SpriteAnimationGroupComponent
     //   position += velocity * dt;
   }
 
+  void _playerJump(double dt) {
+    velocity.y = -_jumpForce;
+    position.y += velocity.y * dt;
+    isOnGround = false;
+    hasJumped = false;
+  }
+
   void _updatePlayerState() {
     PlayerState playerState = PlayerState.idle;
     if (velocity.x < 0 && scale.x > 0) {
@@ -132,5 +158,53 @@ class Player extends SpriteAnimationGroupComponent
     // Kiểm tra actor đang di chuyển thì chuyển sang trạng thái running
     if (velocity.x > 0 || velocity.x < 0) playerState = PlayerState.running;
     current = playerState;
+  }
+
+  void _checkHorizontalCollisons() {
+    for (final block in collisionBlocks) {
+      // Xử lý collision
+      if (!block.isPlatform) {
+        if (checkCollision(this, block)) {
+          if (velocity.x > 0) {
+            velocity.x = 0;
+            position.x = block.x - width;
+            break;
+          }
+          if (velocity.x < 0) {
+            velocity.x = 0;
+            position.x = block.x + block.width + width;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  //Xử lý trọng lực
+  void _applyGravity(double dt) {
+    velocity.y += _gravity;
+    velocity.y = velocity.y.clamp(-_jumpForce, _terminalVelocity);
+    position.y += velocity.y * dt;
+  }
+
+  void _checkVerticalCollisions() {
+    for (final block in collisionBlocks) {
+      if (block.isPlatform) {
+        //Xử lý chạm dưới
+      } else {
+        if (checkCollision(this, block)) {
+          if (velocity.y > 0) {
+            velocity.y = 0;
+            position.y = block.y - width;
+            isOnGround = true;
+            break;
+          }
+          if (velocity.y < 0) {
+            velocity.y = 0;
+            position.y = block.y + block.height;
+          }
+        }
+      }
+    }
   }
 }
